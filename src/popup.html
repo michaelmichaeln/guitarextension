@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guitar Tuner</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="tuner-container">
+        <!-- Header -->
+        <div class="header">
+            <button class="back-btn">‹</button>
+            <h1>Standard</h1>
+            <button class="settings-btn">⚙</button>
+        </div>
+
+        <!-- String Selector -->
+        <div class="string-selector">
+            <button class="string-btn" data-note="E" data-freq="82.41">E</button>
+            <button class="string-btn" data-note="A" data-freq="110.00">A</button>
+            <button class="string-btn" data-note="D" data-freq="146.83">D</button>
+            <button class="string-btn" data-note="G" data-freq="196.00">G</button>
+            <button class="string-btn" data-note="B" data-freq="246.94">B</button>
+            <button class="string-btn" data-note="E" data-freq="329.63">E</button>
+        </div>
+
+        <!-- Tuning Display -->
+        <div class="tuning-display">
+            <!-- Tuning Meter -->
+            <div class="tuning-meter">
+                <div class="meter-scale">
+                    <span class="scale-label left">-50</span>
+                    <span class="scale-label center">0</span>
+                    <span class="scale-label right">+50</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-lines"></div>
+                    <div class="meter-needle" id="tuningNeedle"></div>
+                </div>
+            </div>
+
+            <!-- Status Message -->
+            <div class="status-message" id="statusMessage">
+                <span>PLUCK A STRING</span>
+            </div>
+
+            <!-- Note Display -->
+            <div class="note-display" id="noteDisplay">
+                <div class="cents" id="centsDisplay">--</div>
+                <div class="frequency" id="frequencyDisplay">-- Hz</div>
+            </div>
+        </div>
+
+        <!-- Reference Pitch -->
+        <div class="reference-section">
+            <div class="reference-label">REFERENCE PITCH</div>
+            <div class="reference-value">A: <span id="referencePitch">440</span> Hz</div>
+        </div>
+
+        <!-- Status Dots -->
+        <div class="status-dots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button id="startBtn" class="control-btn">Start Tuner</button>
+            <button id="stopBtn" class="control-btn" style="display: none;">Stop</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
