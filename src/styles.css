@@ -1,0 +1,42 @@
+/* Content script styles for Guitar Tuner Extension */
+
+/* Optional: Style modifications for guitar tab websites */
+.guitar-tab-highlight {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid #667eea;
+    padding: 2px 5px;
+    margin: 2px 0;
+}
+
+.guitar-chord-highlight {
+    background-color: rgba(255, 215, 61, 0.2);
+    border-radius: 3px;
+    padding: 1px 3px;
+    font-weight: bold;
+}
+
+/* Quick access button styling (if enabled in content.js) */
+.guitar-tuner-quick-access {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 50px !important;
+    height: 50px !important;
+    background: #00C896 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 20px !important;
+    z-index: 10000 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+}
+
+.guitar-tuner-quick-access:hover {
+    transform: scale(1.1) !important;
+    background: #00B085 !important;
+} 

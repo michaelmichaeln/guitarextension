@@ -6,9 +6,7 @@
     
     "permissions": [
       "activeTab",
-      "storage",
-      "audio"
-
+      "storage"
     ],
     
     "content_scripts": [{
