@@ -1,14 +1,16 @@
 {
     "manifest_version": 3,
-    "name": "Guitar Extension",
+    "name": "Guitar Helper",
     "version": "1.0",
-    "description": "A Chrome extension for guitar-related functionality",
+    "description": "A Chrome extension for guitar tuning and metronome",
     
     "permissions": [
       "activeTab",
-      "storage"
+      "storage",
+      "tabs"
     ],
-    
+
+
     "content_scripts": [{
       "matches": ["<all_urls>"],
       "js": ["src/content.js"],

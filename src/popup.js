@@ -31,7 +31,8 @@ class GuitarTuner {
         document.getElementById('stopBtn').addEventListener('click', () => this.stopTuner());
         
         // Settings
-        document.querySelector('.settings-btn').addEventListener('click', () => this.openSettings());
+        //document.querySelector('.settings-btn').addEventListener('click', () => this.openSettings());
+        document.getElementById('configureMicBtn').addEventListener('click', () => this.openExtensionPermissions());
     }
 
     selectString(button) {
@@ -50,21 +51,26 @@ class GuitarTuner {
     }
 
     async startTuner() {
+        const permissionState = await this.checkCurrentPermissions();
+        console.log('Permission state before starting:', permissionState);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: false,
                     autoGainControl: false,
-                    noiseSuppression: false
+                    noiseSuppression: false,
+                    sampleRate: 44100,
+                    channelCount: 1
                 }
             });
+            console.log('✅ Microphone access granted!', stream);
             
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
             this.microphone = this.audioContext.createMediaStreamSource(stream);
             
-            this.analyser.fftSize = 4096;
-            this.analyser.smoothingTimeConstant = 0.8;
+            this.analyser.fftSize = 8192;
+            this.analyser.smoothingTimeConstant = 0.3;
             this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
             
             this.microphone.connect(this.analyser);
@@ -73,12 +79,11 @@ class GuitarTuner {
             // Update UI
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('stopBtn').style.display = 'block';
-            document.getElementById('statusMessage').innerHTML = '<span>LISTENING...</span>';
             
             this.detectPitch();
         } catch (error) {
-            console.error('Microphone access error:', error);
-            alert('Please allow microphone access to use the tuner.');
+            console.log('❌ Microphone access failed:', error);
+            this.showMicrophonePermissionError();
         }
     }
 
@@ -95,7 +100,6 @@ class GuitarTuner {
         // Reset UI
         document.getElementById('startBtn').style.display = 'block';
         document.getElementById('stopBtn').style.display = 'none';
-        document.getElementById('statusMessage').innerHTML = '<span>PLUCK A STRING</span>';
         document.getElementById('centsDisplay').textContent = '--';
         document.getElementById('frequencyDisplay').textContent = '-- Hz';
         
@@ -109,7 +113,7 @@ class GuitarTuner {
         this.analyser.getFloatTimeDomainData(this.dataArray);
         const frequency = this.autoCorrelate(this.dataArray, this.audioContext.sampleRate);
         
-        if (frequency > 0) {
+        if (frequency > 70 && frequency < 400) {
             const note = this.frequencyToNote(frequency);
             const cents = this.getCentsOffPitch(frequency, note);
             
@@ -124,60 +128,54 @@ class GuitarTuner {
             // Auto-select closest string
             this.autoSelectString(note.note);
         }
+        const rms = Math.sqrt(this.dataArray.reduce((sum, val) => sum + val * val, 0) / this.dataArray.length);
+    const signalPercent = Math.min(100, Math.floor(rms * 1000));
+    document.getElementById('signalLevel').textContent = signalPercent + '%';
         
-        requestAnimationFrame(() => this.detectPitch());
+        setTimeout(() => this.detectPitch(), 50);
     }
 
     autoCorrelate(buffer, sampleRate) {
         const SIZE = buffer.length;
         const rms = Math.sqrt(buffer.reduce((sum, val) => sum + val * val, 0) / SIZE);
         
-        if (rms < 0.01) return -1;
+        if (rms < 0.003) return -1;
+
+        const minPeriod = Math.floor(sampleRate / 400);  // 400 Hz max
+        const maxPeriod = Math.floor(sampleRate / 70);   // 70 Hz min
         
-        let r1 = 0, r2 = SIZE - 1;
-        const threshold = 0.2;
-        
-        for (let i = 0; i < SIZE / 2; i++) {
-            if (Math.abs(buffer[i]) < threshold) {
-                r1 = i;
-                break;
-            }
+        const correlations = new Array(maxPeriod + 1).fill(0);
+    
+    //  Optimize correlation calculation
+    for (let lag = minPeriod; lag <= maxPeriod; lag++) {
+        for (let i = 0; i < SIZE - lag; i++) {
+            correlations[lag] += buffer[i] * buffer[i + lag];
         }
-        
-        for (let i = 1; i < SIZE / 2; i++) {
-            if (Math.abs(buffer[SIZE - i]) < threshold) {
-                r2 = SIZE - i;
-                break;
-            }
+    }
+    
+    //  Find best correlation
+    let maxCorrelation = 0;
+    let bestPeriod = -1;
+    
+    for (let lag = minPeriod; lag <= maxPeriod; lag++) {
+        if (correlations[lag] > maxCorrelation) {
+            maxCorrelation = correlations[lag];
+            bestPeriod = lag;
         }
-        
-        buffer = buffer.slice(r1, r2);
-        const c = new Array(buffer.length).fill(0);
-        
-        for (let i = 0; i < buffer.length; i++) {
-            for (let j = 0; j < buffer.length - i; j++) {
-                c[i] += buffer[j] * buffer[j + i];
-            }
-        }
-        
-        let d = 0;
-        while (c[d] > c[d + 1]) d++;
-        
-        let maxVal = -1, maxPos = -1;
-        for (let i = d; i < buffer.length; i++) {
-            if (c[i] > maxVal) {
-                maxVal = c[i];
-                maxPos = i;
-            }
-        }
-        
-        let T0 = maxPos;
-        const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
-        const a = (x1 - 2 * x2 + x3) / 2;
-        const b = (x3 - x1) / 2;
-        if (a) T0 = T0 - b / (2 * a);
-        
-        return sampleRate / T0;
+    }
+    
+    if (bestPeriod === -1) return -1;
+    
+    // Parabolic interpolation for sub-sample accuracy
+    const y1 = correlations[bestPeriod - 1] || 0;
+    const y2 = correlations[bestPeriod];
+    const y3 = correlations[bestPeriod + 1] || 0;
+    
+    const a = (y1 - 2 * y2 + y3) / 2;
+    const b = (y3 - y1) / 2;
+    const betterPeriod = a !== 0 ? bestPeriod - b / (2 * a) : bestPeriod;
+    
+    return sampleRate / betterPeriod;
     }
 
     frequencyToNote(frequency) {
@@ -265,7 +263,6 @@ class GuitarTuner {
     }
 
     updateUI() {
-        document.getElementById('statusMessage').innerHTML = '<span>PLUCK A STRING</span>';
         this.resetTuningIndicator();
         this.updateStatusDots();
     }
@@ -274,9 +271,39 @@ class GuitarTuner {
         // Future: Open settings modal
         console.log('Settings clicked');
     }
+    showMicrophonePermissionError() {
+        console.log('Showing microphone permission error');
+        const errorMessage = `Microphone access is required for the guitar tuner to work.
+    
+    Please click "Configure Mic" and allow microphone permissions for this extension.
+    
+    Click OK to open extension settings, or Cancel to dismiss.`;
+    if (confirm(errorMessage)) {
+        this.openExtensionPermissions();
+    }
+    }
+    
+    openExtensionPermissions() {
+        // Open Chrome extensions page for this extension
+        chrome.tabs.create({
+            url: `chrome://settings/content/siteDetails?site=chrome-extension://${chrome.runtime.id}`
+        });
+    }
+    async checkCurrentPermissions() {
+    try {
+        const permission = await navigator.permissions.query({ name: 'microphone' });
+        console.log('🔒 Current microphone permission:', permission.state);
+        return permission.state;
+    } catch (error) {
+        console.log('❓ Could not check permissions:', error);
+        return 'unknown';
+    }
+}
+    
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new GuitarTuner();
 });
+

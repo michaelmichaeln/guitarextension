@@ -40,22 +40,20 @@
                 </div>
             </div>
 
-            <!-- Status Message -->
-            <div class="status-message" id="statusMessage">
-                <span>PLUCK A STRING</span>
-            </div>
+        <!-- Controls -->
+        <div class="controls">
+            <button id="startBtn" class="control-btn">Start Tuner</button>
+            <button id="stopBtn" class="control-btn" style="display: none;">Stop</button>
+        </div>
 
             <!-- Note Display -->
             <div class="note-display" id="noteDisplay">
                 <div class="cents" id="centsDisplay">--</div>
                 <div class="frequency" id="frequencyDisplay">-- Hz</div>
+                <div class="signal-strength" style="margin-top: 10px; font-size: 12px; color: #888;">
+                    Signal: <span id="signalLevel">--</span>
+                </div>
             </div>
-        </div>
-
-        <!-- Reference Pitch -->
-        <div class="reference-section">
-            <div class="reference-label">REFERENCE PITCH</div>
-            <div class="reference-value">A: <span id="referencePitch">440</span> Hz</div>
         </div>
 
         <!-- Status Dots -->
@@ -67,12 +65,13 @@
             <div class="dot"></div>
             <div class="dot"></div>
         </div>
-
-        <!-- Controls -->
-        <div class="controls">
-            <button id="startBtn" class="control-btn">Start Tuner</button>
-            <button id="stopBtn" class="control-btn" style="display: none;">Stop</button>
-        </div>
+    </div>
+    
+    <!-- Mic Configuration -->
+    <div class="mic-config" style="text-align: center; margin-top: 15px;">
+        <button id="configureMicBtn" class="control-btn" style="background: #FFB800; font-size: 12px; padding: 8px 16px;">
+            Configure Mic
+        </button>
     </div>
 
     <script src="popup.js"></script>
